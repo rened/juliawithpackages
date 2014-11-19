@@ -1,4 +1,4 @@
-## Per-project declarative Julia packages
+## Per-project, declarative Julia package installations
 
 *juliawithpackages*, or `jwp` for short, allows to declaratively specify which Julia packages a project should use, with exact version or commit information.
 
