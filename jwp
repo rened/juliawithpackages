@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+if [ ! -e REQUIRE ]
+then
+	julia $*
+	exit
+fi
+
+HASH=`md5sum REQUIRE | tr " " "\n" | head -n 1`
+
+export JULIA_PKGDIR=$HOME/.julia/juliawithpackages/$HASH
+export JULIA_LOAD_PATH="`pwd`/modules"
+
+if [ ! -e $JULIA_PKGDIR/v0.3/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.4/REQUIRE ]
+then
+	SOURCE="${BASH_SOURCE[0]}"
+	while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+	  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+	  SOURCE="$(readlink "$SOURCE")"
+	  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+	done
+	DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+	julia $DIR/installpackages.jl
+fi
+
+julia --no-startup $* 
+	
+
