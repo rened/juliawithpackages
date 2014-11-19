@@ -21,7 +21,11 @@ git@github.com:rened/LibGit2.jl.git 9283d54a87de3253a66bfb48a0d0b3f677ed5e13
 
 ## Installation
 
-You need to have `git` and `md5sum` installed. Clone this repository and make `jwp` accessible, for example by linking it to a directory that is already in your `PATH`: `ln -s jwp ~/local/bin`.
+You need to have `git` and `md5sum` installed. Clone this repository and make `jwp` accessible, for example by linking it to a directory that is already in your `PATH`:
+
+```
+ln -s jwp ~/local/bin`
+```
 
 ## How does it work?
 
