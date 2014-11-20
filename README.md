@@ -50,7 +50,7 @@ chmod -R +w $HOME/.julia/juliawithpackages && rm -rf $HOME/.julia/juliawithpacka
 
 Normally, Julia has a global, mutable state of installed packages in `$HOME/.julia/v0.x`.
 
-`jwp`, in contrast, installs the packages for each unique `REQUIRE.jwd` file in a distinct location, and calls Julia with a modified `JULIA_PKGDIR`. Like this, Julia sees only the packages specified in `REQUIRE.jwd`, and different projects can easily specify which package versions (even individual commits) they would like to use.
+`jwp`, in contrast, installs the packages for each unique `REQUIRE.jwd` file in a distinct location, makes the installation read-only, and calls Julia with a modified `JULIA_PKGDIR`. Like this, Julia sees only the packages specified in `REQUIRE.jwd`, and different projects can easily specify which package versions (even individual commits) they would like to use.
 
 The packages are actually installed in `$HOME/.julia/juliawithpackages/HASH/v0.x`, where `HASH` is the md5 hash over the contents of the `REQUIRE.jwd` file.
 
