@@ -52,9 +52,11 @@ println("ok")
 
 Pkg.init()
 map(install, packages)
+Pkg.resolve()
 
 print("Making $(Pkg.dir()) read only ...")
 run(`chmod -R 555 $(Pkg.dir())`)
+run(`find $(Pkg.dir()) -name .git -exec chmod -R a+w {} \;`)
 println(" done")
 
 println("Finished installing packages from $REQUIRE.")
