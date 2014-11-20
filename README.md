@@ -1,6 +1,6 @@
 ## Per-project, declarative Julia package installations
 
-**juliawithpackagesi**, or `jwp` for short, allows to declaratively specify which Julia packages a project should use, with exact version or commit details.
+**juliawithpackages**, or `jwp` for short, allows to declaratively specify which Julia packages a project should use, with exact version or commit details.
 
 `jwp` will install the specified packages (if necessary) and start 'julia' with exactly these packages available. 
 
