@@ -38,7 +38,7 @@ export JULIA_PKGDIR=$HOME/.julia/juliawithpackages/$HASH
 export JULIA_LOAD_PATH="`pwd`/modules"
 
 # remove non-finished previous installation attempts
-for i in v0.3 v0.4
+for i in v0.2 v0.3 v0.4
 do
 	if [ -e $JULIA_PKGDIR/$i ] && [ $($STAT $JULIA_PKGDIR/$i) != $STATVALUE ];
 	then
@@ -48,7 +48,7 @@ do
 done
 
 # install packages if not installled yet
-if [ ! -e $JULIA_PKGDIR/v0.3/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.4/REQUIRE ]; 
+if [ ! -e $JULIA_PKGDIR/v0.2/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.3/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.4/REQUIRE ]; 
 then
 	# find out where the script is:
 	# (thanks to http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in)
