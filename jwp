@@ -36,8 +36,6 @@ fi
 HASH=`$MD5 $REQUIRE | tr " " "\n" | head -n 1`
 export JULIA_PKGDIR=$HOME/.julia/juliawithpackages/$HASH
 export JULIA_LOAD_PATH="`pwd`/modules"
-echo  $($STAT $JULIA_PKGDIR/$i)
-echo $STATVALUE
 
 # remove non-finished previous installation attempts
 for i in v0.3 v0.4
