@@ -1,22 +1,44 @@
 #!/bin/bash
 
+# stop on error
 set -e
 
-if [ ! -e REQUIRE.jwp ]
+# default for unset ENV variables
+if [ -z "$REQUIRE" ]
 then
-	julia $*
+	REQUIRE=REQUIRE.jwp
+fi
+if [ -z "$JULIA" ]
+then
+	JULIA=julia
+fi
+
+
+# need a declaration file
+if [ ! -e $REQUIRE ]
+then
+	echo "juliawithpackages: $REQUIRE not found"
 	exit
 fi
 
-HASH=`md5sum REQUIRE.jwp | tr " " "\n" | head -n 1`
 
+# set variables
+HASH=`md5sum $REQUIRE | tr " " "\n" | head -n 1`
 export JULIA_PKGDIR=$HOME/.julia/juliawithpackages/$HASH
 export JULIA_LOAD_PATH="`pwd`/modules"
 
-if [ -e $JULIA_PKGDIR ] && [ $(stat -c %a $JULIA_PKGDIR) != 555 ];
-then
-	rm -rf $JULIA_PKGDIR
-fi
+
+# remove non-finished previous installation attempts
+for i in v0.3 v0.4
+do
+	if [ -e $JULIA_PKGDIR/$i ] && [ $(stat -c %a $JULIA_PKGDIR/$i) != 555 ];
+	then
+		chmod -R +w $JULIA_PKGDIR/$i && rm -rf $JULIA_PKGDIR/$i
+		echo "removed un-finished installation in $JULIA_PKGDIR/$i"
+	fi
+done
+
+# install packages if not installled yet
 if [ ! -e $JULIA_PKGDIR/v0.3/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.4/REQUIRE ]; 
 then
 	# find out where the script is:
@@ -30,9 +52,11 @@ then
 	done
 	DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-	julia $DIR/installpackages.jl
+	julia $DIR/installpackages.jl $REQUIRE
 fi
 
-julia --no-startup $* 
+
+# invoke julia
+$JULIA --no-startup $* 
 	
 

@@ -42,8 +42,9 @@ function parseline(a)
 	end
 end
 
-print("Parsing REQUIRE.jwp ... ")
-lines = filter(x->!isempty(x) && x[1]!='#', split(readall("REQUIRE.jwp"), '\n'))
+REQUIRE = Base.ARGS[1]
+print("Parsing $REQUIRE ... ")
+lines = filter(x->!isempty(x) && x[1]!='#', split(readall(REQUIRE), '\n'))
 
 packages = map(parseline, lines)
 println("ok")
@@ -56,7 +57,7 @@ print("Making $(Pkg.dir()) read only ...")
 run(`chmod -R a-w $(Pkg.dir())`)
 println(" done")
 
-println("Finished installing packages from REQUIRE.jwp.")
+println("Finished installing packages from $REQUIRE.")
 
 
 
