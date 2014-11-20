@@ -13,7 +13,11 @@ HASH=`md5sum REQUIRE | tr " " "\n" | head -n 1`
 export JULIA_PKGDIR=$HOME/.julia/juliawithpackages/$HASH
 export JULIA_LOAD_PATH="`pwd`/modules"
 
-if [ ! -e $JULIA_PKGDIR/v0.3/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.4/REQUIRE ]
+if [ -e $JULIA_PKGDIR ] && [ $(stat -c %a $JULIA_PKGDIR) != 555 ];
+then
+	rm -rf $JULIA_PKGDIR
+fi
+if [ ! -e $JULIA_PKGDIR/v0.3/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.4/REQUIRE ]; 
 then
 	# find out where the script is:
 	# (thanks to http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in)

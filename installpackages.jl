@@ -19,10 +19,7 @@ type Git
 end
 
 function install(a::Git)
-	@show "installing git" a
-	println("clongin")
 	Pkg.clone(a.url)
-	println("did clone")
 	if !isempty(a.commit) 
 		m = match(r"(?:^|[/\\])(\w+?)(?:\.jl)?(?:\.git)?$", a.url)
 		m != nothing || error("can't determine package name from URL: $a.url")
@@ -45,8 +42,8 @@ function parseline(a)
 	end
 end
 
-print("Parsing REQUIRE ... ")
-lines = filter(x->!isempty(x) && x[1]!='#', split(readall("REQUIRE"), '\n'))
+print("Parsing REQUIRE.jwp ... ")
+lines = filter(x->!isempty(x) && x[1]!='#', split(readall("REQUIRE.jwp"), '\n'))
 
 packages = map(parseline, lines)
 println("ok")
@@ -59,7 +56,7 @@ print("Making $(Pkg.dir()) read only ...")
 run(`chmod -R a-w $(Pkg.dir())`)
 println(" done")
 
-println("Finished installing packages from REQUIRE.")
+println("Finished installing packages from REQUIRE.jwp.")
 
 
 
