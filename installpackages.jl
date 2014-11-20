@@ -54,7 +54,7 @@ Pkg.init()
 map(install, packages)
 
 print("Making $(Pkg.dir()) read only ...")
-run(`chmod -R a-w $(Pkg.dir())`)
+run(`chmod -R 555 $(Pkg.dir())`)
 println(" done")
 
 println("Finished installing packages from $REQUIRE.")

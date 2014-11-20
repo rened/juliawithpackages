@@ -23,21 +23,26 @@ fi
 
 
 # set variables
-if [ -e md5sum ]
+if [ `uname` == Darwin ]
 then
-	MD5=md5sum
+	MD5="md5 -q"    
+	STAT="stat -f \"%p\""
+	STATVALUE=\"40555\"
 else
-	MD5=md5   # for OSX
+	MD5=md5sum
+	STAT="stat -c %a"
+	STATVALUE=555
 fi
 HASH=`$MD5 $REQUIRE | tr " " "\n" | head -n 1`
 export JULIA_PKGDIR=$HOME/.julia/juliawithpackages/$HASH
 export JULIA_LOAD_PATH="`pwd`/modules"
-
+echo  $($STAT $JULIA_PKGDIR/$i)
+echo $STATVALUE
 
 # remove non-finished previous installation attempts
 for i in v0.3 v0.4
 do
-	if [ -e $JULIA_PKGDIR/$i ] && [ $(stat -c %a $JULIA_PKGDIR/$i) != 555 ];
+	if [ -e $JULIA_PKGDIR/$i ] && [ $($STAT $JULIA_PKGDIR/$i) != $STATVALUE ];
 	then
 		chmod -R +w $JULIA_PKGDIR/$i && rm -rf $JULIA_PKGDIR/$i
 		echo "removed un-finished installation in $JULIA_PKGDIR/$i"
