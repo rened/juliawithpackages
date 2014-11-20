@@ -56,5 +56,5 @@ The packages are actually installed in `$HOME/.julia/juliawithpackages/HASH/v0.x
 
 In addition to `JULIA_PKGDIR` the `JULIA_LOAD_PATH` is set to point to a `modules` subdirectory of where `jwp` was invoked. This is thus a great place to put any git submodules.
 
-While cruft will accumulate over time in `$HOME/.julia/juliawithpackages`, the few MBs lost are a very cheap resource compared to programmer time and nerves. And, you can still simply delete that directory from time to time if you wantto.
+While cruft will accumulate over time in `$HOME/.julia/juliawithpackages`, the few MBs lost are a very cheap resource compared to programmer time and nerves. And, you can still simply delete that directory from time to time if you want to.
 
