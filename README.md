@@ -8,7 +8,7 @@
 
 ## Installation
 
-You need to have `git` and `md5sum` installed. Clone this repository and make `jwp` accessible, for example by linking it to a directory that is already in your `PATH`:
+You need to have `git` and `md5` (OSX) or `md5sum` (Linux) installed. Clone this repository and make `jwp` accessible, for example by linking it to a directory that is already in your `PATH`:
 
 ```
 ln -s jwp ~/local/bin/jwp
