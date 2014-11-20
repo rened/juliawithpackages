@@ -2,13 +2,13 @@
 
 set -e
 
-if [ ! -e REQUIRE ]
+if [ ! -e REQUIRE.jwp ]
 then
 	julia $*
 	exit
 fi
 
-HASH=`md5sum REQUIRE | tr " " "\n" | head -n 1`
+HASH=`md5sum REQUIRE.jwp | tr " " "\n" | head -n 1`
 
 export JULIA_PKGDIR=$HOME/.julia/juliawithpackages/$HASH
 export JULIA_LOAD_PATH="`pwd`/modules"
