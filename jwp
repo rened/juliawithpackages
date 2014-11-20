@@ -23,7 +23,13 @@ fi
 
 
 # set variables
-HASH=`md5sum $REQUIRE | tr " " "\n" | head -n 1`
+if [ -e md5sum ]
+then
+	MD5=md5sum
+else
+	MD5=md5   # for OSX
+fi
+HASH=`$MD5 $REQUIRE | tr " " "\n" | head -n 1`
 export JULIA_PKGDIR=$HOME/.julia/juliawithpackages/$HASH
 export JULIA_LOAD_PATH="`pwd`/modules"
 
