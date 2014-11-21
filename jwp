@@ -42,8 +42,8 @@ for i in v0.2 v0.3 v0.4
 do
 	if [ -e $JULIA_PKGDIR/$i ] && [ $($STAT $JULIA_PKGDIR/$i) != $STATVALUE ];
 	then
+		echo "Removing un-finished installation in $JULIA_PKGDIR/$i"
 		chmod -R +w $JULIA_PKGDIR/$i && rm -rf $JULIA_PKGDIR/$i
-		echo "removed un-finished installation in $JULIA_PKGDIR/$i"
 	fi
 done
 
@@ -61,7 +61,7 @@ then
 	done
 	DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-	julia $DIR/installpackages.jl $REQUIRE
+	julia $DIR/src/installpackages.jl $REQUIRE
 fi
 
 

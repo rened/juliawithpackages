@@ -1,65 +1,189 @@
-
-function checkout(path, commit)
-	run(`git --git-dir=$path/.git checkout --quiet $commit`)	
-end
-type Package
-	name
-	commit
-	Package(name, commit="") = new(name, commit)
-end
-function install(a::Package) 
-	Pkg.add(a.name)
-	isempty(a.commit) ? nothing : checkout(Pkg.dir(a.name), a.commit)
+function installpackages()
+	lines = readfile()
+    init(lines)
+    packages = parselines(lines)
+	@show packages
+    install(packages)
+	resolve(packages)
+	updatefile(lines, packages)
+	finish()
 end
 
-type Git
-	url
-	commit
-	Git(url, commit="") = new(url, commit)
+function readfile()
+	REQUIRE = Base.ARGS[1]
+	print("Parsing $REQUIRE ... ")
+	lines = split(readall(REQUIRE), '\n')
+	lines = map(x->replace(x, r"#.*", ""), lines)
+	lines = filter(x->!isempty(x), lines)
+	println("ok")
+	return lines
 end
 
-function install(a::Git)
-	Pkg.clone(a.url)
-	if !isempty(a.commit) 
-		m = match(r"(?:^|[/\\])(\w+?)(?:\.jl)?(?:\.git)?$", a.url)
-		m != nothing || error("can't determine package name from URL: $a.url")
-		pkg = m.captures[1]
-		checkout(Pkg.dir(pkg), a.commit)
+function init(lines)
+	metadata = filter(x->ismatch(r"METADATA.jl", x), lines)
+	if length(metadata)>0
+		assert(length(metadata)==1)
+		url = split(metadata[1])[1]
+		println("Found URL $url for METADATA")
+	else
+		url = "https://github.com/JuliaLang/METADATA.jl.git"
 	end
+	println("Cloning METADATA ...")
+    mkpath(Pkg.dir())
+    run(`git clone $url $(Pkg.dir())/METADATA`)
+	run(`chmod -R a-w $(Pkg.dir())/METADATA`)
 end
 
+
+parselines(lines) = filter(x->isa(x,Package), map(parseline, lines))
 function parseline(a)
 	parts = split(a)
-	package = parts[1]
-	commit = length(parts)>1 ? parts[2] : ""
+
+	if parts[1][1] == '@'
+		os = parts[1]
+		shift!(parts)
+	else
+		os = ""
+	end
+
+	nameorurl = parts[1]
+	if contains(nameorurl, "/")
+		url = nameorurl
+		name = replace(replace(split(url, "/")[end], ".git", ""), ".jl", "")
+		isregistered = false
+	else
+		name = nameorurl
+		url = strip(readall("$(Pkg.dir())/METADATA/$name/url"))
+		isregistered = true
+	end
+	if name=="METADATA"
+		return []
+	end
+
+	commit = length(parts)>1 ? parts[2] : (isregistered ? "METADATA" : "")
 	if length(split(commit,"."))==3
 		commit = "v"*commit
 	end
-	if contains(package, "/")
-		return Git(package, commit)
-	else
-		return Package(package, commit)
-	end
+	return Package(os, name, url, commit, isregistered)
 end
 
-REQUIRE = Base.ARGS[1]
-print("Parsing $REQUIRE ... ")
-lines = filter(x->!isempty(x) && x[1]!='#', split(readall(REQUIRE), '\n'))
+function checkout(url, commit)
+end
 
-packages = map(parseline, lines)
-println("ok")
+type Package
+	os
+	name
+	url
+	commit
+	isregistered
+end
 
+function install(packages::Array)
+	osx = filter(x->x.os=="@osx", packages)
+	unix = filter(x->x.os=="@unix", packages)
+	linux = filter(x->x.os=="@linux", packages)
+	windows = filter(x->x.os=="@windows", packages)
+	everywhere = filter(x->x.os=="", packages)
+	@osx_only map(install, osx)
+	@unix_only map(install, unix)
+	@linux_only map(install, linux)
+	@windows_only map(install, windows)
+	map(install, everywhere)
+end
 
-Pkg.init()
-map(install, packages)
-Pkg.resolve()
+function install(a::Package)
+ 	path = Pkg.dir(a.name)
+ 	run(`git clone $(a.url) $path`)
+	git = ["git", "--git-dir=$path/.git", "--work-tree=$path"]
 
-print("Making $(Pkg.dir()) read only ...")
-run(`chmod -R 555 $(Pkg.dir())`)
-run(`find $(Pkg.dir()) -name .git -exec chmod -R a+w {} \;`)
-println(" done")
+	version(a) = VersionNumber(map(int, split(a, "."))...)
+	latest() = "v"*string(maximum(map(version, readdir(Pkg.dir("METADATA/$(a.name)/versions")))))
+	
+	commit = isempty(a.commit) ? strip(readall(`$git log -n 1 --format="%H"`)) : (a.commit == "METADATA" ? latest() : a.commit)
+    run(`$git checkout --force -b pinned.$commit.tmp $commit`)
+end
 
-println("Finished installing packages from $REQUIRE.")
+function resolve(packages)
+	open(Pkg.dir()*"/REQUIRE","w") do io
+		for pkg in packages
+			write(io, "$(pkg.os) $(pkg.name)\n")
+		end
+	end
+	Pkg.resolve()
+end
+
+function savesnapshot(filename="REQUIRE.jwp")
+	open(filename,"w") do io 
+		write(io, join(map(x->x[2],generatespecs())))
+	end
+	nothing
+end
+
+function generatespecs()
+	packages = collect(keys(Pkg.installed()))
+	packages = filter(x->x!="JuliaWithPackages", packages)
+	push!(packages, "METADATA")
+
+ 	requires = map(x->readall(Pkg.dir(first(x))*"/REQUIRE"), Pkg.installed())
+	requires = unique(vcat(map(x->collect(split(x,'\n')), requires)...))
+	requires = filter(x->!isempty(x) && !ismatch(r"^julia", x), requires)
+	selectors = Dict(map(x->split(x)[end], requires), map(x->x[1]=='@' ? split(x)[1]*" " : "", requires))
+	getsel(pkg) = haskey(selectors, pkg) ? selectors[pkg] : ""
+ 
+	metapkgs = {}
+	giturls = {}
+	for pkg in packages
+		dir = Pkg.dir(pkg)
+		git = ["git", "--git-dir=$dir/.git"]
+		url = strip(readall(`$git config --get remote.origin.url`))
+		metaurl = ""
+		try metaurl = strip(readall(Pkg.dir("METADATA")*"/$pkg/url")) catch end
+		@show url metaurl
+		if url==metaurl
+			url = pkg
+		end
+		commit = strip(readall(`$git log -n 1 --format="%H"`))
+		remote = strip(readall(`$git remote`))
+		branch = strip(readall(`$git rev-parse --abbrev-ref HEAD`))
+		version = split(strip(readall(`$git name-rev --tags --name-only $commit`)),"^")[1]
+		onversion = version != "undefined"
+		isahead = ismatch(r"^pinned.*tmp", branch) ? false : !isempty(strip(readall(`$git log $remote/$branch..HEAD`)))
+		if isahead
+			error("Cannot create a jwp specification from the currently installed packages as the following packages have local commits ahead of their origin: $(join(packages[isahead], ", "))\nPush those commits first, then run JuliaWithPackages.savesnapshot() again.")
+		end
+		push!(url == pkg ? metapkgs : giturls, (pkg, sprint(println,"$(getsel(pkg))$url $(onversion?version[2:end]:commit)")))
+	end
+
+	specs = {}
+	if !(isempty(metapkgs))
+		append!(specs, metapkgs[sortperm(map(first,metapkgs))])
+	end
+ 	if !(isempty(giturls))
+		append!(specs, giturls[sortperm(map(first,giturls))])
+	end
+	specs
+end
+
+function updatefile(lines, packages)
+	savesnapshot(ENV["REQUIRE"])
+    @osx_only md5 = strip(readall(`md5 -q $(ENV["REQUIRE"])`))
+    @linux_only md5 = strip(readall(`md5sum $(ENV["REQUIRE"])`))
+	md5 = split(md5)[1]
+    symlink(Pkg.dir(), normpath(Pkg.dir()*".."*md5))
+end
+
+function finish()
+	dir = Pkg.dir()
+	print("Marking $dir read only ...")
+	run(`chmod -R 555 $dir`)
+	run(`find $dir -name .git -exec chmod -R a+w {} \;`)
+	println(" done")
+
+	println("Finished installing packages from $(ENV["REQUIRE"]).")
+end
+
+installpackages()
+
 
 
 
