@@ -4,9 +4,9 @@
 set -e
 
 # default for unset ENV variables
-if [ -z "$REQUIRE" ]
+if [ -z "$DECLARE" ]
 then
-	REQUIRE=REQUIRE.jwp
+	DECLARE=DECLARE
 fi
 if [ -z "$JULIA" ]
 then
@@ -15,9 +15,9 @@ fi
 
 
 # need a declaration file
-if [ ! -e $REQUIRE ]
+if [ ! -e $DECLARE ]
 then
-	echo "juliawithpackages: $REQUIRE not found"
+	echo "DeclarativePackages: $DECLARE not found"
 	exit
 fi
 
@@ -33,9 +33,9 @@ else
 	STAT="stat -c %a"
 	STATVALUE=555
 fi
-HASH=`$MD5 $REQUIRE | tr " " "\n" | head -n 1`
-export JULIA_PKGDIR=$HOME/.julia/juliawithpackages/$HASH
-export JULIA_LOAD_PATH="`pwd`/modules"
+HASH=`$MD5 $DECLARE | tr " " "\n" | head -n 1`
+export JULIA_PKGDIR=$HOME/.julia/declarative/$HASH
+export JULIA_LOAD_PATH="`pwd`/submodules"
 
 # remove non-finished previous installation attempts
 for i in v0.2 v0.3 v0.4
@@ -61,7 +61,7 @@ then
 	done
 	DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-	julia $DIR/src/installpackages.jl $REQUIRE
+	DECLARE=$DECLARE julia $DIR/installpackages.jl 
 fi
 
 

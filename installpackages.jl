@@ -2,17 +2,14 @@ function installpackages()
 	lines = readfile()
     init(lines)
     packages = parselines(lines)
-	@show packages
     install(packages)
 	resolve(packages)
-	updatefile(lines, packages)
 	finish()
 end
 
 function readfile()
-	REQUIRE = Base.ARGS[1]
-	print("Parsing $REQUIRE ... ")
-	lines = split(readall(REQUIRE), '\n')
+	print("Parsing $(ENV["DECLARE"]) ... ")
+	lines = split(readall(ENV["DECLARE"]), '\n')
 	lines = map(x->replace(x, r"#.*", ""), lines)
 	lines = filter(x->!isempty(x), lines)
 	println("ok")
@@ -20,6 +17,7 @@ function readfile()
 end
 
 function init(lines)
+	ENV["JULIA_PKGDIR"] = normpath(Pkg.dir()*"/../../tmp_"*randstring(32))
 	metadata = filter(x->ismatch(r"METADATA.jl", x), lines)
 	if length(metadata)>0
 		assert(length(metadata)==1)
@@ -112,7 +110,7 @@ function resolve(packages)
 	Pkg.resolve()
 end
 
-function savesnapshot(filename="REQUIRE.jwp")
+function savesnapshot(filename="DECLARE")
 	open(filename,"w") do io 
 		write(io, join(map(x->x[2],generatespecs())))
 	end
@@ -121,7 +119,7 @@ end
 
 function generatespecs()
 	packages = collect(keys(Pkg.installed()))
-	packages = filter(x->x!="JuliaWithPackages", packages)
+	packages = filter(x->x!="DeclarativePackages", packages)
 	push!(packages, "METADATA")
 
  	requires = map(x->readall(Pkg.dir(first(x))*"/REQUIRE"), Pkg.installed())
@@ -149,7 +147,7 @@ function generatespecs()
 		onversion = version != "undefined"
 		isahead = ismatch(r"^pinned.*tmp", branch) ? false : !isempty(strip(readall(`$git log $remote/$branch..HEAD`)))
 		if isahead
-			error("Cannot create a jwp specification from the currently installed packages as the following packages have local commits ahead of their origin: $(join(packages[isahead], ", "))\nPush those commits first, then run JuliaWithPackages.savesnapshot() again.")
+			error("Cannot create a jdp declaration from the currently installed packages as the following packages have local commits ahead of their origin: $(join(packages[isahead], ", "))\nPush those commits first, then run 'jdp' again.")
 		end
 		push!(url == pkg ? metapkgs : giturls, (pkg, sprint(println,"$(getsel(pkg))$url $(onversion?version[2:end]:commit)")))
 	end
@@ -164,22 +162,21 @@ function generatespecs()
 	specs
 end
 
-function updatefile(lines, packages)
-	savesnapshot(ENV["REQUIRE"])
-    @osx_only md5 = strip(readall(`md5 -q $(ENV["REQUIRE"])`))
-    @linux_only md5 = strip(readall(`md5sum $(ENV["REQUIRE"])`))
-	md5 = split(md5)[1]
-    symlink(Pkg.dir(), normpath(Pkg.dir()*".."*md5))
-end
-
 function finish()
-	dir = Pkg.dir()
+	savesnapshot(ENV["DECLARE"])
+    @osx_only md5 = strip(readall(`md5 -q $(ENV["DECLARE"])`))
+    @linux_only md5 = strip(readall(`md5sum $(ENV["DECLARE"])`))
+	md5 = split(md5)[1]
+	dir = normpath(Pkg.dir()*"/../../"*md5)
+    mv(Pkg.dir(), dir)
+	ENV["JULIA_PKGDIR"] = dir
+
 	print("Marking $dir read only ...")
 	run(`chmod -R 555 $dir`)
 	run(`find $dir -name .git -exec chmod -R a+w {} \;`)
 	println(" done")
 
-	println("Finished installing packages from $(ENV["REQUIRE"]).")
+	println("Finished installing packages from $(ENV["DECLARE"]).")
 end
 
 installpackages()
