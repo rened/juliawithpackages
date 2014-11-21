@@ -136,7 +136,6 @@ function generatespecs()
 		url = strip(readall(`$git config --get remote.origin.url`))
 		metaurl = ""
 		try metaurl = strip(readall(Pkg.dir("METADATA")*"/$pkg/url")) catch end
-		@show url metaurl
 		if url==metaurl
 			url = pkg
 		end
@@ -168,12 +167,15 @@ function finish()
     @linux_only md5 = strip(readall(`md5sum $(ENV["DECLARE"])`))
 	md5 = split(md5)[1]
 	dir = normpath(Pkg.dir()*"/../../"*md5)
-    mv(Pkg.dir(), dir)
+
+	try	rm(dir; recursive=true)	catch end
+    mv(normpath(Pkg.dir()*"/../"), dir)
 	ENV["JULIA_PKGDIR"] = dir
 
 	print("Marking $dir read only ...")
 	run(`chmod -R 555 $dir`)
 	run(`find $dir -name .git -exec chmod -R a+w {} \;`)
+	run(`chmod 755 $dir`)
 	println(" done")
 
 	println("Finished installing packages from $(ENV["DECLARE"]).")

@@ -33,19 +33,10 @@ else
 	STAT="stat -c %a"
 	STATVALUE=555
 fi
+
 HASH=`$MD5 $DECLARE | tr " " "\n" | head -n 1`
 export JULIA_PKGDIR=$HOME/.julia/declarative/$HASH
 export JULIA_LOAD_PATH="`pwd`/submodules"
-
-# remove non-finished previous installation attempts
-for i in v0.2 v0.3 v0.4
-do
-	if [ -e $JULIA_PKGDIR/$i ] && [ $($STAT $JULIA_PKGDIR/$i) != $STATVALUE ];
-	then
-		echo "Removing un-finished installation in $JULIA_PKGDIR/$i"
-		chmod -R +w $JULIA_PKGDIR/$i && rm -rf $JULIA_PKGDIR/$i
-	fi
-done
 
 # install packages if not installled yet
 if [ ! -e $JULIA_PKGDIR/v0.2/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.3/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.4/REQUIRE ]; 
