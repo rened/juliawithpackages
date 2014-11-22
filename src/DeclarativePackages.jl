@@ -11,7 +11,7 @@ string(a::Spec) = "$(a.selector)$(a.package) $(a.commit)"
 
 function exportDECLARE(filename = "DECLARE")
 	specs, osspecific = generatespecs()
-	os = map(string, osspecific)
+	os = map(x -> string(x[2]), osspecific)
 	try
 		newselectors = unique(map(x -> x[2].selector, specs))
 		existingspecs = split(strip(readall(filename)), '\n')

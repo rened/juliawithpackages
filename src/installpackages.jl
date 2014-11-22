@@ -22,11 +22,12 @@ end
 function init(lines)
 	ENV["JULIA_PKGDIR"] = normpath(Pkg.dir()*"/../../tmp_"*randstring(32))
 	metadata = filter(x->ismatch(r"METADATA.jl", x), lines)
+	commit = ""
 	if length(metadata)>0
 		assert(length(metadata)==1)
 		m = split(metadata[1])
 		url = split(metadata[1])[1]
-		commit = length(m)>1 ? m[2] : ""
+		length(m) > 1 ? commit = m[2] : nothing
 		println("Found URL $url for METADATA")
 	else
 		url = "https://github.com/JuliaLang/METADATA.jl.git"
