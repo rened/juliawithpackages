@@ -7,13 +7,13 @@ type Spec
 	package
 	commit
 end
-string(a::Spec) = "$(a.selector)$(a.package) $(a.commit)"
+string(a::Spec) = "$(a.selector)$(isempty(a.selector) ? "" : " ")$(a.package) $(a.commit)"
 
 function exportDECLARE(filename = "DECLARE")
 	specs, osspecific = generatespecs()
 	os = map(x -> string(x[2]), osspecific)
 	try
-		newselectors = unique(map(x -> x[2].selector, specs))
+		newselectors = unique(map(x -> x[2].selector, osspecific))
 		existingspecs = split(strip(readall(filename)), '\n')
 		keeping = filter(x -> split(x)[1][1]=='@' && !in(split(x)[1], newselectors), existingspecs)
 		append!(os, keeping)
@@ -34,7 +34,7 @@ function generatespecs()
  	requires = map(x->readall(Pkg.dir(first(x))*"/REQUIRE"), Pkg.installed())
 	requires = unique(vcat(map(x->collect(split(x,'\n')), requires)...))
 	requires = filter(x->!isempty(x) && !ismatch(r"^julia", x), requires)
-	selectors = Dict(map(x->split(x)[end], requires), map(x->x[1]=='@' ? split(x)[1]*" " : "", requires))
+	selectors = Dict(map(x->split(x)[end], requires), map(x->x[1]=='@' ? split(x)[1] : "", requires))
 	getsel(pkg) = haskey(selectors, pkg) ? selectors[pkg] : ""
  
 	metapkgs = {}
