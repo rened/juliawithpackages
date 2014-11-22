@@ -2,9 +2,26 @@ module DeclarativePackages
 
 export exportDECLARE
 
-function exportDECLARE(filename="DECLARE")
+type Spec
+	selector
+	package
+	commit
+end
+string(a::Spec) = "$(a.selector)$(a.package) $(a.commit)"
+
+function exportDECLARE(filename = "DECLARE")
+	specs, osspecific = generatespecs()
+	os = map(string, osspecific)
+	try
+		newselectors = unique(map(x -> x[2].selector, specs))
+		existingspecs = split(strip(readall(filename)), '\n')
+		keeping = filter(x -> split(x)[1][1]=='@' && !in(split(x)[1], newselectors), existingspecs)
+		append!(os, keeping)
+	catch
+	end
 	open(filename,"w") do io 
-		write(io, join(map(x->x[2],generatespecs())))
+		map(x->println(io, string(x[2])), specs)
+		map(x->println(io, x), sort(os))
 	end
 	nothing
 end
@@ -22,6 +39,7 @@ function generatespecs()
  
 	metapkgs = {}
 	giturls = {}
+	osspecific = {}
 	for pkg in packages
 		dir = Pkg.dir(pkg)
 		git = ["git", "--git-dir=$dir/.git"]
@@ -40,7 +58,8 @@ function generatespecs()
 		if isahead
 			error("Cannot create a jdp declaration from the currently installed packages as '$pkg' has local commits ahead of origin.\nPush those commits, then run 'jdp' again.")
 		end
-		push!(url == pkg ? metapkgs : giturls, (pkg, sprint(println,"$(getsel(pkg))$url $(onversion?version[2:end]:commit)")))
+		list = isempty(getsel(pkg)) ? (url ==  pkg ? metapkgs : giturls) : osspecific 
+		push!(list, (pkg, Spec(getsel(pkg), url, onversion ? version[2:end] : commit)))
 	end
 
 	specs = {}
@@ -50,7 +69,7 @@ function generatespecs()
  	if !(isempty(giturls))
 		append!(specs, giturls[sortperm(map(first,giturls))])
 	end
-	specs
+	(specs, osspecific)
 end
  
 end

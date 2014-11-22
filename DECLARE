@@ -1,8 +1,8 @@
 BinDeps 0.3.6
 Compat 0efce72d06da55837eae2efbe08bcf52f1ea37fe
 HDF5 0.4.6
-@osx Homebrew 0b922233176272d8664aed29e4c86424f750a16f
 JSON 7853e4a6c4a9ddc3f651876c0c101aeecd6a77c5
 SHA 0.0.3
 URIParser 0.0.3
 https://github.com/JuliaLang/METADATA.jl.git f072e2379d7fe110628fa1b4cdba2d35f1450d55
+@osx Homebrew 0b922233176272d8664aed29e4c86424f750a16f

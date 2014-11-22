@@ -24,14 +24,20 @@ function init(lines)
 	metadata = filter(x->ismatch(r"METADATA.jl", x), lines)
 	if length(metadata)>0
 		assert(length(metadata)==1)
+		m = split(metadata[1])
 		url = split(metadata[1])[1]
+		commit = length(m)>1 ? m[2] : ""
 		println("Found URL $url for METADATA")
 	else
 		url = "https://github.com/JuliaLang/METADATA.jl.git"
 	end
 	println("Cloning METADATA ...")
     mkpath(Pkg.dir())
-    run(`git clone $url $(Pkg.dir())/METADATA`)
+	path = Pkg.dir("METADATA")
+    run(`git clone $url $path`)
+	if !isempty(commit)
+	    run(`git --git-dir=$path/.git --work-tree=$path reset --hard $commit`)
+	end
 	run(`chmod -R a-w $(Pkg.dir())/METADATA`)
 end
 
@@ -117,12 +123,13 @@ end
 
 function finish()
 	exportDECLARE(ENV["DECLARE"])
+
     @osx_only md5 = strip(readall(`md5 -q $(ENV["DECLARE"])`))
     @linux_only md5 = strip(readall(`md5sum $(ENV["DECLARE"])`))
 	md5 = split(md5)[1]
 	dir = normpath(Pkg.dir()*"/../../"*md5)
 
-	@show normpath(Pkg.dir()*"/../") dir
+	#@show normpath(Pkg.dir()*"/../") dir
 	try	rm(dir; recursive=true)	catch end
     mv(normpath(Pkg.dir()*"/../"), dir)
 	ENV["JULIA_PKGDIR"] = dir
