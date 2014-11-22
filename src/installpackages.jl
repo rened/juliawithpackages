@@ -1,3 +1,6 @@
+include("DeclarativePackages.jl")
+using DeclarativePackages
+
 function installpackages()
 	lines = readfile()
     init(lines)
@@ -96,9 +99,10 @@ function install(a::Package)
 
 	version(a) = VersionNumber(map(int, split(a, "."))...)
 	latest() = "v"*string(maximum(map(version, readdir(Pkg.dir("METADATA/$(a.name)/versions")))))
+	metadatacommit(version) = strip(readall(Pkg.dir("METADATA/$(a.name)/versions/$(version[2:end])/sha1")))
 	
 	commit = isempty(a.commit) ? strip(readall(`$git log -n 1 --format="%H"`)) : (a.commit == "METADATA" ? latest() : a.commit)
-    run(`$git checkout --force -b pinned.$commit.tmp $commit`)
+    run(`$git checkout --force -b pinned.$commit.tmp $(a.commit == "METADATA" ? metadatacommit(commit) : commit)`)
 end
 
 function resolve(packages)
@@ -110,64 +114,15 @@ function resolve(packages)
 	Pkg.resolve()
 end
 
-function savesnapshot(filename="DECLARE")
-	open(filename,"w") do io 
-		write(io, join(map(x->x[2],generatespecs())))
-	end
-	nothing
-end
-
-function generatespecs()
-	packages = collect(keys(Pkg.installed()))
-	packages = filter(x->x!="DeclarativePackages", packages)
-	push!(packages, "METADATA")
-
- 	requires = map(x->readall(Pkg.dir(first(x))*"/REQUIRE"), Pkg.installed())
-	requires = unique(vcat(map(x->collect(split(x,'\n')), requires)...))
-	requires = filter(x->!isempty(x) && !ismatch(r"^julia", x), requires)
-	selectors = Dict(map(x->split(x)[end], requires), map(x->x[1]=='@' ? split(x)[1]*" " : "", requires))
-	getsel(pkg) = haskey(selectors, pkg) ? selectors[pkg] : ""
- 
-	metapkgs = {}
-	giturls = {}
-	for pkg in packages
-		dir = Pkg.dir(pkg)
-		git = ["git", "--git-dir=$dir/.git"]
-		url = strip(readall(`$git config --get remote.origin.url`))
-		metaurl = ""
-		try metaurl = strip(readall(Pkg.dir("METADATA")*"/$pkg/url")) catch end
-		if url==metaurl
-			url = pkg
-		end
-		commit = strip(readall(`$git log -n 1 --format="%H"`))
-		remote = strip(readall(`$git remote`))
-		branch = strip(readall(`$git rev-parse --abbrev-ref HEAD`))
-		version = split(strip(readall(`$git name-rev --tags --name-only $commit`)),"^")[1]
-		onversion = version != "undefined"
-		isahead = ismatch(r"^pinned.*tmp", branch) ? false : !isempty(strip(readall(`$git log $remote/$branch..HEAD`)))
-		if isahead
-			error("Cannot create a jdp declaration from the currently installed packages as the following packages have local commits ahead of their origin: $(join(packages[isahead], ", "))\nPush those commits first, then run 'jdp' again.")
-		end
-		push!(url == pkg ? metapkgs : giturls, (pkg, sprint(println,"$(getsel(pkg))$url $(onversion?version[2:end]:commit)")))
-	end
-
-	specs = {}
-	if !(isempty(metapkgs))
-		append!(specs, metapkgs[sortperm(map(first,metapkgs))])
-	end
- 	if !(isempty(giturls))
-		append!(specs, giturls[sortperm(map(first,giturls))])
-	end
-	specs
-end
 
 function finish()
-	savesnapshot(ENV["DECLARE"])
+	exportDECLARE(ENV["DECLARE"])
     @osx_only md5 = strip(readall(`md5 -q $(ENV["DECLARE"])`))
     @linux_only md5 = strip(readall(`md5sum $(ENV["DECLARE"])`))
 	md5 = split(md5)[1]
 	dir = normpath(Pkg.dir()*"/../../"*md5)
 
+	@show normpath(Pkg.dir()*"/../") dir
 	try	rm(dir; recursive=true)	catch end
     mv(normpath(Pkg.dir()*"/../"), dir)
 	ENV["JULIA_PKGDIR"] = dir

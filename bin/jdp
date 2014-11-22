@@ -36,10 +36,9 @@ fi
 
 HASH=`$MD5 $DECLARE | tr " " "\n" | head -n 1`
 export JULIA_PKGDIR=$HOME/.julia/declarative/$HASH
-export JULIA_LOAD_PATH="`pwd`/submodules"
 
 # install packages if not installled yet
-if [ ! -e $JULIA_PKGDIR/v0.2/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.3/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.4/REQUIRE ]; 
+if [ ! -e $JULIA_PKGDIR/v0.2/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.3/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.4/REQUIRE ] && [ ! -e $JULIA_PKGDIR/v0.6/REQUIRE ]; 
 then
 	# find out where the script is:
 	# (thanks to http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in)
@@ -52,11 +51,16 @@ then
 	done
 	DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-	DECLARE=$DECLARE julia $DIR/installpackages.jl 
+	DECLARE=$DECLARE $JULIA $DIR/../src/installpackages.jl 
 fi
 
+
+# HASH might have changed due to DECLARE update, recompute
+HASH=`$MD5 $DECLARE | tr " " "\n" | head -n 1`
+export JULIA_PKGDIR=$HOME/.julia/declarative/$HASH
 
 # invoke julia
 $JULIA --no-startup $* 
 	
+
 

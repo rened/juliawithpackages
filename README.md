@@ -12,7 +12,7 @@ You need to have `git` installed. Install the package and link `jdp` to a direct
 
 ```jl
 Pkg.add('DeclarativePackages') 
-symlink(Pkg.dir("DeclarativePackages")*"/jdp",  "~/local/bin/jdp")
+symlink(Pkg.dir("DeclarativePackages")*"/bin/jdp",  "~/local/bin/jdp")
 ```
 
 ## Usage
@@ -39,6 +39,28 @@ You can change both the name of the `DECLARE` file as well as the `julia` binary
 ```bash
 DECLARE=mydeclarations.txt JULIA=/usr/bin/juliafromgit jdp -e "println(123")
 ```
+If you would like to start with `DECLARE` based on your currently installed packages, run:
+
+```bash
+julia -e "using DeclarativePackages; exportDECLARE()"
+```
+Finally, `git add DECLARE` and track the set of installed packages along with your code!
+
+### How to update packages
+
+You will see that your `DECLARE` files get auto-updated if not all packages are specified. Also `METADATA` (where Julia gets the information about available packages from) is listed and fixed at a commit.
+
+There are several ways to update a package by editing `DECLARE`:
+
+* You can change the version number or commit hash.
+* You can remove the package and have `jdp` update it to the version `Pkg.add()` would pick.
+* As long as `DECLARE` contains a line fixing `METADATA` to a specific commit packages can only be updated using the versions listed therein.
+* You can use `METADATA` corresponding to a different commit hash (simply change it), or delete the line containing `METADATA` to pull in the newest `METADATA`. 
+* You can keep a second declaration file, e.g. `DECLARE.minimal`, containing only the minumum you want to specify:
+```
+HDF5
+```
+Running `cp DECLARE.minimal DECLARE; jdp` will then update everything to the newest versions, which is usefull during development. As you have `DECLARE` in your `git` repo you can always go back.
 
 ## Uninstall
 
